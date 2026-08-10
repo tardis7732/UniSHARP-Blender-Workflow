@@ -504,8 +504,9 @@ def launch_arguments() -> argparse.Namespace:
     parser.add_argument("--host", default=os.environ.get("UNISHARP_UI_HOST", "127.0.0.1"), help="Bind host; use 0.0.0.0 only with an authenticated network path.")
     parser.add_argument("--port", type=int, default=int(os.environ.get("UNISHARP_UI_PORT", "7860")), help="Bind port.")
     parser.add_argument("--share", action="store_true", help="Create a temporary Gradio public URL. A PIN is strongly recommended.")
-    parser.add_argument("--require-pin", action="store_true", help="Require the browser to authenticate with a username and one-time PIN.")
+    parser.add_argument("--require-pin", action="store_true", help="Require the browser to authenticate with a PIN.")
     parser.add_argument("--pin", default=os.environ.get("UNISHARP_UI_PIN"), help="PIN to require. Prefer UNISHARP_UI_PIN over putting a secret in shell history.")
+    parser.add_argument("--pin-only", action="store_true", help="Validate only the password/PIN field; the browser username field may be left blank.")
     parser.add_argument("--username", default=os.environ.get("UNISHARP_UI_USERNAME", "unisharp"), help="Browser login username when PIN protection is enabled.")
     return parser.parse_args()
 
@@ -513,13 +514,20 @@ def launch_arguments() -> argparse.Namespace:
 def launch_browser_ui() -> None:
     args = launch_arguments()
     pin = args.pin
-    auth: tuple[str, str] | None = None
-    if args.require_pin or pin:
+    auth: object | None = None
+    if args.require_pin or args.pin_only or pin:
         if not pin:
             pin = f"{secrets.randbelow(1_000_000):06d}"
             print("\n[UniSHARP] Browser PIN generated for this run.")
-        print(f"[UniSHARP] Browser login  |  username: {args.username}  |  PIN: {pin}")
-        auth = (args.username, pin)
+        if args.pin_only:
+            def authenticate_pin(_: str, password: str) -> bool:
+                return secrets.compare_digest(password or "", pin or "")
+
+            print(f"[UniSHARP] Browser PIN: {pin}  |  Leave the username field blank and enter this PIN as the password.")
+            auth = authenticate_pin
+        else:
+            print(f"[UniSHARP] Browser login  |  username: {args.username}  |  PIN: {pin}")
+            auth = (args.username, pin)
     if args.share and auth is None:
         print("[UniSHARP] Warning: --share makes a temporary public URL without a PIN. Use --require-pin for protected access.")
     demo.launch(
@@ -528,7 +536,7 @@ def launch_browser_ui() -> None:
         inbrowser=not args.share and args.host in {"127.0.0.1", "localhost"},
         share=args.share,
         auth=auth,
-        auth_message="UniSHARP browser access is protected. Enter the username and PIN printed in the server terminal.",
+        auth_message="UniSHARP browser access is protected. Enter the PIN printed in the server terminal. When username-free PIN mode is used, leave Username blank.",
         footer_links=[],
         css=CUSTOM_CSS,
     )
