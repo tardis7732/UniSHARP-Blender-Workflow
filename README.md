@@ -20,6 +20,7 @@
 ## 문서
 
 - [Blender · Unreal 사용 가이드](docs/LOCAL_BLENDER_UNREAL_GUIDE.md) — 사용 라이브러리, 휴대용 실행, PLY 결과물, Unreal 플러그인 설치 방법
+- [GPU 서버 브라우저/PIN 접속](docs/GPU_SERVER_BROWSER_ACCESS.md) — VS Code 포트포워딩, PIN 로그인 및 임시 공유 URL 실행 방법
 - [서드파티 고지 및 라이선스](THIRD_PARTY_NOTICES.md) — UniSHARP, UniK3D 및 외부 도구의 출처와 적용 라이선스
 - [원본 UniSHARP 저장소](https://github.com/Insta360-Research-Team/UniSHARP) — 연구 코드의 전체 설치·학습·검증 안내
 
