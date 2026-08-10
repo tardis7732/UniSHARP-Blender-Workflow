@@ -7,7 +7,7 @@
 ## 빠른 시작 (Windows)
 
 1. NVIDIA GPU가 있는 Windows PC에서 배포 폴더의 `Run-UniSHARP.cmd`를 실행합니다.
-2. Blender 5.2 LTS가 없으면 안내에 따라 설치합니다.
+2. Blender 3.6 이상이 없으면 안내에 따라 설치합니다. 설치 프로그램은 편의를 위해 Blender 5.2 LTS를 기본 선택지로 제안합니다.
 3. 로컬 GUI에서 이미지를 고르고 출력 폴더와 옵션을 정한 뒤 **Blender 파일 생성**을 누릅니다.
 
 생성 결과는 다음과 같습니다.
@@ -15,7 +15,7 @@
 - `<이름>_unisharp.blend` — Gaussian 포인트와 카메라가 들어 있는 Blender 장면
 - `<이름>_unreal_gaussian_splat.ply` — Unreal 플러그인으로 불러올 Gaussian Splat PLY
 
-모델 체크포인트와 개인 입력/생성 결과물은 이 저장소에 포함하지 않습니다.
+모델 체크포인트와 개인 입력/생성 결과물은 이 저장소에 포함하지 않습니다. 체크포인트가 없으면 첫 실행 시 공식 Hugging Face 배포처에서 약 4.7GB를 자동으로 내려받습니다.
 
 ## 문서
 

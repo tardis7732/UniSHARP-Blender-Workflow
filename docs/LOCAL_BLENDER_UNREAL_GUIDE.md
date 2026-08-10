@@ -36,7 +36,7 @@ Unreal에는 반드시 `*_unreal_gaussian_splat.ply`를 사용하세요. Blender
 | --- | --- |
 | [Gradio](https://www.gradio.app/) `6.22.0` | `scripts/blender_gui.py`의 로컬 웹 GUI입니다. |
 | [Viser](https://viser.studio/) `1.0.30` | GUI 안에서 Unreal PLY를 WebGL로 미리보기 위한 로컬 뷰어입니다. 이 뷰어는 파일을 업로드하지 않습니다. |
-| [Blender 5.2 LTS](https://www.blender.org/download/lts/5-2/) | `.blend` 파일 생성에 사용합니다. Windows 휴대용 실행기는 설치 여부를 확인하고, 없으면 공식 설치 파일을 내려받아 실행할 수 있습니다. |
+| [Blender 3.6 이상](https://www.blender.org/download/) | `.blend` 파일 생성에 사용합니다. 이 워크플로우는 Blender의 기본 PLY import가 있는 3.6 이상을 지원합니다. Windows 휴대용 실행기는 설치 여부를 확인하고, 없으면 5.2 LTS를 기본 설치 선택지로 제안합니다. |
 
 GUI 전용 추가 의존성은 [`requirements-portable.txt`](../requirements-portable.txt)에 있으며, 기본 연구 환경은 [`requirements.txt`](../requirements.txt)에 있습니다.
 
@@ -44,9 +44,10 @@ GUI 전용 추가 의존성은 [`requirements-portable.txt`](../requirements-por
 
 배포 폴더의 `Run-UniSHARP.cmd`를 더블클릭하면 됩니다.
 
-1. Blender 5.2 LTS가 없으면 공식 Blender 설치 파일을 다운로드해 설치를 안내합니다.
-2. NVIDIA 드라이버/GPU를 확인합니다. CUDA 환경이 없으면 CUDA 12.8 네트워크 설치 파일을 다운로드하고 설치를 시작할지 묻습니다.
-3. 프로젝트 전용 Miniforge/Python 환경과 필요한 Python 패키지를 준비한 뒤 GUI를 엽니다.
+1. Blender 3.6 이상이 없으면 공식 Blender 설치 파일을 다운로드해 설치를 안내합니다. 자동 설치의 기본 선택지는 Blender 5.2 LTS입니다.
+2. UniSHARP 체크포인트가 없으면 공식 Hugging Face 배포처에서 약 4.7GB를 자동으로 다운로드합니다.
+3. NVIDIA 드라이버/GPU를 확인합니다. CUDA 환경이 없으면 CUDA 12.8 네트워크 설치 파일을 다운로드하고 설치를 시작할지 묻습니다.
+4. 프로젝트 전용 Miniforge/Python 환경과 필요한 Python 패키지를 준비한 뒤 GUI를 엽니다.
 
 CUDA Toolkit은 PyTorch CUDA wheel 자체에 포함되는 런타임과는 별개입니다. GPU 드라이버가 최신이고 PyTorch가 정상 인식한다면 Toolkit을 별도로 설치하지 않아도 추론되는 구성도 있습니다. 설치 프로그램의 안내에 따라 드라이버/Toolkit을 준비한 뒤 재시작이 필요할 수 있습니다.
 
@@ -78,6 +79,6 @@ CUDA Toolkit은 PyTorch CUDA wheel 자체에 포함되는 런타임과는 별개
 
 ## 참고
 
-- UniSHARP 모델 체크포인트는 `checkpoints/pretained_model.pt`가 기본값입니다.
+- UniSHARP 모델 체크포인트는 `checkpoints/pretained_model.pt`가 기본값이며, 파일이 없으면 GUI 또는 휴대용 실행기가 [공식 Hugging Face 배포처](https://huggingface.co/Insta360-Research/Unisharp)에서 자동으로 받습니다.
 - Blender 파일의 거리 단위는 미터로 설정하지만, 단일 이미지 복원 결과의 절대 스케일은 추정값입니다.
 - 원근 카메라를 사용한 장면에서 필요하면 GUI의 세로 맞춤/스케일 옵션을 조절해 원본 이미지와 viewport overlay를 맞출 수 있습니다.

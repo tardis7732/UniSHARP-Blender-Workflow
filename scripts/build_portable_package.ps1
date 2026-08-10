@@ -6,12 +6,6 @@ param(
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 $AppDestination = Join-Path $Destination "app"
-$Checkpoint = Join-Path $RepoRoot "checkpoints\pretained_model.pt"
-
-if (-not (Test-Path -LiteralPath $Checkpoint)) {
-    throw "Checkpoint not found: $Checkpoint"
-}
-
 New-Item -ItemType Directory -Force -Path $Destination, $AppDestination | Out-Null
 
 $RobocopyArguments = @(
@@ -28,7 +22,6 @@ if ($LASTEXITCODE -gt 7) {
 }
 
 New-Item -ItemType Directory -Force -Path (Join-Path $AppDestination "checkpoints") | Out-Null
-Copy-Item -LiteralPath $Checkpoint -Destination (Join-Path $AppDestination "checkpoints\pretained_model.pt") -Force
 Copy-Item -LiteralPath (Join-Path $RepoRoot "portable\Run-UniSHARP.cmd") -Destination $Destination -Force
 Copy-Item -LiteralPath (Join-Path $RepoRoot "portable\Setup-UniSHARP.ps1") -Destination $Destination -Force
 Copy-Item -LiteralPath (Join-Path $RepoRoot "portable\GPU-Setup-Guide.md") -Destination $Destination -Force
@@ -37,12 +30,12 @@ New-Item -ItemType Directory -Force -Path (Join-Path $Destination "Blender_Outpu
 @"
 UniSHARP Blender portable package
 
-1. Install Blender 5.2 LTS on this PC first.
+1. Install Blender 3.6 or newer on this PC, or let the launcher install Blender 5.2 LTS as its default.
 2. Read GPU-Setup-Guide.md if this is the first run.
 3. Double-click Run-UniSHARP.cmd.
 
-The first run downloads a private Miniforge/PyTorch CUDA environment into .runtime.
-Keep the app folder and checkpoint together.
+The first run downloads the official UniSHARP checkpoint (about 4.7 GB) when it is missing, then creates a private Miniforge/PyTorch CUDA environment in .runtime.
+Keep the app folder together.
 "@ | Set-Content -LiteralPath (Join-Path $Destination "README.txt") -Encoding utf8
 
 Write-Host "Portable package created: $Destination" -ForegroundColor Green

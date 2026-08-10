@@ -1,17 +1,17 @@
 # UniSHARP Blender - first-run guide
 
-## First: install Blender 5.2 LTS
+## First: install Blender 3.6 or newer
 
-**Blender 5.2 LTS must be installed before running UniSHARP.** Install the Windows version from Blender's official LTS page, then return here and double-click `Run-UniSHARP.cmd`.
+**Blender 3.6 or newer is required before running UniSHARP.** Any supported Blender version with its standard PLY import is fine. If Blender is missing, `Run-UniSHARP.cmd` can download and start the Blender 5.2 LTS installer as its recommended default.
 
-- [Blender LTS download](https://www.blender.org/download/lts/)
+- [Blender download](https://www.blender.org/download/)
 
-Run `Run-UniSHARP.cmd`. It creates a private Python environment in `.runtime`, then downloads the CUDA-enabled PyTorch package and the remaining Python libraries. It does not modify the system Python installation.
+Run `Run-UniSHARP.cmd`. If the model checkpoint is absent, it automatically downloads the official UniSHARP `pretained_model.pt` checkpoint (about 4.7 GB). It then creates a private Python environment in `.runtime` and downloads the CUDA-enabled PyTorch package and the remaining Python libraries. It does not modify the system Python installation.
 
 ## Automatic NVIDIA / CUDA installer
 
 - `Run-UniSHARP.cmd` is the only file you need to run. It checks Blender, the NVIDIA driver, Python, and PyTorch in order.
-- If Blender 5.2 LTS or the NVIDIA driver/CUDA is missing, it asks for approval, downloads the official installer, and starts it automatically.
+- If Blender 3.6+ or the NVIDIA driver/CUDA is missing, it asks for approval, downloads the official installer, and starts it automatically. Blender 5.2 LTS is the default installer choice, not a version requirement.
 - After a CUDA/driver installation, restart Windows, then double-click `Run-UniSHARP.cmd` again.
 
 ## Required hardware
@@ -19,7 +19,7 @@ Run `Run-UniSHARP.cmd`. It creates a private Python environment in `.runtime`, t
 - Windows 10/11 64-bit
 - NVIDIA GPU with a current NVIDIA driver
 - Enough free disk space for the 4.7 GB checkpoint plus the Python/CUDA runtime (allow 15 GB free)
-- Blender **5.2 LTS** installed. The launcher detects normal Blender installations automatically; set `BLENDER_EXE` if it is installed elsewhere.
+- Blender **3.6 or newer**. The launcher detects normal Blender installations automatically; set `BLENDER_EXE` if it is installed elsewhere.
 
 ## If the NVIDIA driver is missing
 

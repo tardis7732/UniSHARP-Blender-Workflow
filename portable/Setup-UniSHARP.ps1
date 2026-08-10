@@ -11,6 +11,7 @@ $CondaRoot = Join-Path $RuntimeRoot "miniforge"
 $EnvironmentRoot = Join-Path $RuntimeRoot "unisharp"
 $Python = Join-Path $EnvironmentRoot "python.exe"
 $Checkpoint = Join-Path $AppRoot "checkpoints\pretained_model.pt"
+$CheckpointUri = "https://huggingface.co/Insta360-Research/Unisharp/resolve/main/pretained_model.pt?download=true"
 $Guide = Join-Path $PackageRoot "GPU-Setup-Guide.md"
 
 function Write-Step([string] $Message) {
@@ -24,19 +25,33 @@ function Invoke-Checked([string] $Executable, [string[]] $Arguments) {
     }
 }
 
-function Test-BlenderInstallation {
+function Get-BlenderExecutable {
     if ($env:BLENDER_EXE -and (Test-Path -LiteralPath $env:BLENDER_EXE)) {
-        return $true
+        return $env:BLENDER_EXE
     }
     foreach ($programFiles in @($env:ProgramFiles, $env:ProgramW6432) | Select-Object -Unique) {
         if ($programFiles) {
             $blenderRoot = Join-Path $programFiles "Blender Foundation"
-            if (Get-ChildItem -Path $blenderRoot -Filter "blender.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1) {
-                return $true
+            $blender = Get-ChildItem -Path $blenderRoot -Filter "blender.exe" -Recurse -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+            if ($blender) {
+                return $blender.FullName
             }
         }
     }
-    return $false
+    return $null
+}
+
+function Test-BlenderInstallation {
+    $blender = Get-BlenderExecutable
+    if (-not $blender) {
+        return $false
+    }
+    $versionLine = (& $blender "--version" 2>$null | Select-Object -First 1)
+    if ($LASTEXITCODE -ne 0 -or $versionLine -notmatch "Blender\s+(\d+)\.(\d+)") {
+        return $false
+    }
+    $version = [Version]::new([int]$Matches[1], [int]$Matches[2])
+    return $version -ge [Version]::new(3, 6)
 }
 
 function Confirm-Install([string] $Component) {
@@ -48,13 +63,25 @@ function Install-Blender {
     $Installer = Join-Path $RuntimeRoot "blender-5.2.0-windows-x64.msi"
     New-Item -ItemType Directory -Force -Path $RuntimeRoot | Out-Null
     if (-not (Test-Path -LiteralPath $Installer)) {
-        Write-Step "Downloading Blender 5.2 LTS..."
+        Write-Step "Downloading Blender 5.2 LTS as the recommended default..."
         Invoke-WebRequest -Uri "https://download.blender.org/release/Blender5.2/blender-5.2.0-windows-x64.msi" -OutFile $Installer
     }
     Write-Step "Starting the Blender installer..."
     $process = Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i", $Installer) -Wait -PassThru
     if ($process.ExitCode -ne 0) {
         throw "Blender installation failed with exit code $($process.ExitCode)."
+    }
+}
+
+function Install-Checkpoint {
+    if (Test-Path -LiteralPath $Checkpoint) {
+        return
+    }
+    New-Item -ItemType Directory -Force -Path (Split-Path $Checkpoint -Parent) | Out-Null
+    Write-Step "Downloading the UniSHARP model checkpoint (about 4.7 GB; first run only)..."
+    Invoke-WebRequest -Uri $CheckpointUri -OutFile $Checkpoint
+    if (-not (Test-Path -LiteralPath $Checkpoint)) {
+        throw "Checkpoint download finished without the expected file: $Checkpoint"
     }
 }
 
@@ -72,12 +99,10 @@ function Install-CudaToolkit {
 if (-not (Test-Path -LiteralPath $AppRoot)) {
     throw "The app folder is missing: $AppRoot"
 }
-if (-not (Test-Path -LiteralPath $Checkpoint)) {
-    throw "The UniSHARP checkpoint is missing: $Checkpoint"
-}
+Install-Checkpoint
 if (-not (Test-BlenderInstallation)) {
-    if (-not (Confirm-Install "Blender 5.2 LTS")) {
-        Write-Host "Blender is required. Install it, then run Run-UniSHARP.cmd again." -ForegroundColor Yellow
+    if (-not (Confirm-Install "Blender 3.6 or newer")) {
+        Write-Host "Blender 3.6 or newer is required. Install it, then run Run-UniSHARP.cmd again." -ForegroundColor Yellow
         Start-Process $Guide
         exit 1
     }

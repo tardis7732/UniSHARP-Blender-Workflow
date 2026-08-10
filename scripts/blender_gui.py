@@ -22,17 +22,130 @@ import gradio as gr
 
 SCRIPTS = REPO_ROOT / "scripts"
 DEFAULT_CHECKPOINT = REPO_ROOT / "checkpoints" / "pretained_model.pt"
+CHECKPOINT_REPOSITORY = "Insta360-Research/Unisharp"
+CHECKPOINT_FILENAME = "pretained_model.pt"
 APP_ROOT = Path(os.environ.get("UNISHARP_APP_ROOT", REPO_ROOT)).resolve()
 DEFAULT_OUTPUT = APP_ROOT / "Blender_Output"
-DEFAULT_BLENDER = Path(r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe")
 VIEWER_SCRIPT = SCRIPTS / "viser_ply_viewer.py"
 _VIEWER_PROCESS: subprocess.Popen[str] | None = None
 
 
-def _blender_executable() -> Path:
+TEXT = {
+    "ko": {
+        "title": "단일 이미지 가우시안 변환",
+        "language": "언어",
+        "basic": "### 기본 설정",
+        "output_folder": "출력 폴더",
+        "camera_kind": "카메라 종류",
+        "input": "### 입력 이미지",
+        "images": "이미지 추가 (일반 / 어안 / ERP 파노라마)",
+        "options": "### 옵션",
+        "force_square": "정사각형 픽셀 강제 (세로 오버레이 보정)",
+        "force_square_info": "원근 사진에서만 적용됩니다. 추정된 fx를 유지하고 fy=fx로 맞춥니다.",
+        "point_radius": "가우시안 점 표시 반지름 (m)",
+        "point_radius_info": "Blender 뷰포트에서 점을 얼마나 크게 보일지 정하는 화면용 크기입니다. 실제 3D Gaussian의 scale은 바뀌지 않습니다. 값을 키우면 빈틈이 줄고, 너무 크면 디테일이 뭉개집니다.",
+        "background": "원본 이미지를 카메라 배경으로 포함",
+        "metric_reference": "1m 레퍼런스 큐브 포함",
+        "save_ply": "Unreal용 Gaussian Splat PLY 저장",
+        "generate": "Blender 파일 생성",
+        "result": "### 생성 결과",
+        "result_files": "생성된 Blender 파일",
+        "viewer_title": "## Unreal용 Gaussian Splat PLY 미리보기",
+        "viewer_ply": "미리보기할 PLY",
+        "open_viewer": "PLY 미리보기 열기",
+        "viewer_empty": "PLY를 선택한 뒤 미리보기를 열어 주세요.",
+        "auto": "자동",
+        "perspective": "원근",
+        "fisheye": "어안",
+        "panorama": "파노라마",
+        "point_radius_error": "점 표시 반지름은 0보다 커야 합니다.",
+        "checkpoint_downloading": "UniSHARP 모델 체크포인트가 없어 다운로드합니다. 최초 1회 약 4.7GB를 받으므로 인터넷 연결과 여유 공간이 필요합니다.",
+        "checkpoint_failed": "UniSHARP 체크포인트를 다운로드하지 못했습니다: {detail}",
+        "images_required": "이미지를 하나 이상 선택해 주세요.",
+        "image_missing": "입력 이미지를 찾지 못했습니다: {path}",
+        "blender_missing": "Blender 3.6 이상을 찾지 못했습니다. 설치하거나 BLENDER_EXE를 설정한 뒤 GUI를 다시 여세요.",
+        "inference": "UniSHARP 추론",
+        "color_conversion": "색상 변환",
+        "blender_export": "Blender 내보내기",
+        "unreal_export": "Unreal PLY 내보내기",
+        "ply_saved": " Unreal용 Gaussian Splat PLY도 저장했습니다.",
+        "blend_only": " Blender 파일만 저장했습니다.",
+        "done": "완료: Blender 파일 {count}개를 생성했습니다.{ply_note}\n\n{destination}",
+        "viewer_select": "미리보기할 Unreal용 Gaussian Splat PLY를 선택해 주세요.",
+        "viewer_missing": "PLY를 찾지 못했습니다: {path}",
+        "viewer_failed": "PLY 뷰어를 시작하지 못했습니다.",
+    },
+    "en": {
+        "title": "Single Image Gaussian Conversion",
+        "language": "Language",
+        "basic": "### Basic Settings",
+        "output_folder": "Output Folder",
+        "camera_kind": "Camera Type",
+        "input": "### Input Image",
+        "images": "Add Images (standard / fisheye / ERP panorama)",
+        "options": "### Options",
+        "force_square": "Force square pixels (vertical overlay correction)",
+        "force_square_info": "Perspective images only. Keeps the estimated fx and sets fy=fx.",
+        "point_radius": "Gaussian Point Display Radius (m)",
+        "point_radius_info": "Viewport-only point size in Blender. It does not change the actual 3D Gaussian scale. Larger values fill gaps but can blur fine detail.",
+        "background": "Include source image as camera background",
+        "metric_reference": "Include 1 m reference cube",
+        "save_ply": "Save Unreal Gaussian Splat PLY",
+        "generate": "Create Blender File",
+        "result": "### Result",
+        "result_files": "Generated Blender Files",
+        "viewer_title": "## Unreal Gaussian Splat PLY Preview",
+        "viewer_ply": "PLY to Preview",
+        "open_viewer": "Open PLY Preview",
+        "viewer_empty": "Select a PLY file, then open the preview.",
+        "auto": "Auto",
+        "perspective": "Perspective",
+        "fisheye": "Fisheye",
+        "panorama": "Panorama",
+        "point_radius_error": "Point display radius must be greater than zero.",
+        "checkpoint_downloading": "The UniSHARP model checkpoint is missing and will be downloaded. The first download is about 4.7 GB, so an internet connection and free disk space are required.",
+        "checkpoint_failed": "Could not download the UniSHARP checkpoint: {detail}",
+        "images_required": "Select at least one image.",
+        "image_missing": "Input image was not found: {path}",
+        "blender_missing": "Blender 3.6 or newer was not found. Install it or set BLENDER_EXE, then reopen the GUI.",
+        "inference": "UniSHARP inference",
+        "color_conversion": "Color conversion",
+        "blender_export": "Blender export",
+        "unreal_export": "Unreal PLY export",
+        "ply_saved": " Unreal Gaussian Splat PLY was also saved.",
+        "blend_only": " Only the Blender file was saved.",
+        "done": "Done: created {count} Blender file(s).{ply_note}\n\n{destination}",
+        "viewer_select": "Select an Unreal Gaussian Splat PLY to preview.",
+        "viewer_missing": "PLY was not found: {path}",
+        "viewer_failed": "Could not start the PLY viewer.",
+    },
+}
+
+
+def _t(language: str, key: str, **values: object) -> str:
+    return TEXT.get(language, TEXT["ko"])[key].format(**values)
+
+
+def _camera_choices(language: str) -> list[tuple[str, str]]:
+    return [
+        (_t(language, "auto"), "auto"),
+        (_t(language, "perspective"), "perspective"),
+        (_t(language, "fisheye"), "fisheye"),
+        (_t(language, "panorama"), "panorama"),
+    ]
+
+
+def _header_html(language: str) -> str:
+    return (
+        "<div id='unisharp-header'><h1>"
+        f"{_t(language, 'title')}</h1>"
+        "<a href='https://github.com/Insta360-Research-Team/UniSHARP' target='_blank' rel='noopener'>GitHub ↗</a></div>"
+    )
+
+
+def _blender_executable(language: str) -> Path:
     configured = os.environ.get("BLENDER_EXE")
     candidates = [Path(configured)] if configured else []
-    candidates.append(DEFAULT_BLENDER)
     for program_files in (os.environ.get("ProgramFiles"), os.environ.get("ProgramW6432")):
         if program_files:
             blender_root = Path(program_files) / "Blender Foundation"
@@ -43,7 +156,52 @@ def _blender_executable() -> Path:
     discovered = shutil.which("blender")
     if discovered:
         return Path(discovered)
-    raise RuntimeError("Blender executable was not found. Set BLENDER_EXE and reopen the GUI.")
+    raise RuntimeError(_t(language, "blender_missing"))
+
+
+def _ensure_checkpoint(language: str) -> Path:
+    if DEFAULT_CHECKPOINT.is_file():
+        return DEFAULT_CHECKPOINT
+    try:
+        from huggingface_hub import hf_hub_download
+
+        DEFAULT_CHECKPOINT.parent.mkdir(parents=True, exist_ok=True)
+        gr.Info(_t(language, "checkpoint_downloading"), duration=10)
+        hf_hub_download(
+            repo_id=CHECKPOINT_REPOSITORY,
+            filename=CHECKPOINT_FILENAME,
+            local_dir=DEFAULT_CHECKPOINT.parent,
+        )
+    except Exception as error:
+        raise gr.Error(_t(language, "checkpoint_failed", detail=str(error)[-500:])) from error
+    if not DEFAULT_CHECKPOINT.is_file():
+        raise gr.Error(_t(language, "checkpoint_failed", detail="download finished without the expected file"))
+    return DEFAULT_CHECKPOINT
+
+
+def _language_updates(language: str) -> tuple[object, ...]:
+    """Return all visible UI text updates while preserving user-selected values."""
+    return (
+        _header_html(language),
+        _t(language, "basic"),
+        gr.update(label=_t(language, "output_folder")),
+        gr.update(label=_t(language, "camera_kind"), choices=_camera_choices(language)),
+        _t(language, "input"),
+        gr.update(label=_t(language, "images")),
+        _t(language, "options"),
+        gr.update(label=_t(language, "force_square"), info=_t(language, "force_square_info")),
+        gr.update(label=_t(language, "point_radius"), info=_t(language, "point_radius_info")),
+        gr.update(label=_t(language, "background")),
+        gr.update(label=_t(language, "metric_reference")),
+        gr.update(label=_t(language, "save_ply")),
+        gr.update(value=_t(language, "generate")),
+        _t(language, "result"),
+        gr.update(label=_t(language, "result_files")),
+        _t(language, "viewer_title"),
+        gr.update(label=_t(language, "viewer_ply")),
+        gr.update(value=_t(language, "open_viewer")),
+        f"<div>{_t(language, 'viewer_empty')}</div>",
+    )
 
 
 def _run(command: list[str], label: str) -> None:
@@ -74,14 +232,14 @@ def _wait_for_local_port(port: int, timeout_seconds: float = 8.0) -> bool:
     return False
 
 
-def open_ply_viewer(selected_ply: str | None) -> str:
+def open_ply_viewer(selected_ply: str | None, language: str) -> str:
     """Start a local Viser WebGL viewer and return an iframe for Gradio."""
     global _VIEWER_PROCESS
     if not selected_ply:
-        raise gr.Error("\ubbf8\ub9ac\ubcf4\uae30\ud560 Unreal\uc6a9 Gaussian Splat PLY\ub97c \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.")
+        raise gr.Error(_t(language, "viewer_select"))
     ply_path = Path(selected_ply).resolve()
     if not ply_path.is_file():
-        raise gr.Error(f"PLY\ub97c \ucc3e\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4: {ply_path}")
+        raise gr.Error(_t(language, "viewer_missing", path=ply_path))
     if _VIEWER_PROCESS is not None and _VIEWER_PROCESS.poll() is None:
         _VIEWER_PROCESS.terminate()
         try:
@@ -99,7 +257,7 @@ def open_ply_viewer(selected_ply: str | None) -> str:
         creationflags=creationflags,
     )
     if not _wait_for_local_port(port):
-        raise gr.Error("PLY \ubdf0\uc5b4\ub97c \uc2dc\uc791\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.")
+        raise gr.Error(_t(language, "viewer_failed"))
     url = f"http://127.0.0.1:{port}"
     return f'<iframe src="{url}" style="width:100%; height:720px; border:1px solid #444; border-radius:8px;"></iframe>'
 
@@ -116,6 +274,7 @@ def _generate_one(
     save_ply: bool,
     checkpoint_path: Path,
     blender: Path,
+    language: str,
 ) -> str:
     image = image.resolve()
     output_blend = destination / f"{scene_name}_unisharp.blend"
@@ -138,13 +297,13 @@ def _generate_one(
         ]
         if force_square_pixels and camera_kind in {"auto", "perspective"}:
             inference_command.append("--force-square-pixels")
-        _run(inference_command, "UniSHARP inference")
+        _run(inference_command, _t(language, "inference"))
         gaussian_files = list(temp_root.rglob("gaussians.ply"))
         if len(gaussian_files) != 1:
             raise RuntimeError("UniSHARP did not produce the expected Gaussian PLY.")
         source_ply = gaussian_files[0]
         colored_ply = temp_root / "colored_points.ply"
-        _run([sys.executable, str(SCRIPTS / "export_colored_ply.py"), str(source_ply), str(colored_ply)], "Color conversion")
+        _run([sys.executable, str(SCRIPTS / "export_colored_ply.py"), str(source_ply), str(colored_ply)], _t(language, "color_conversion"))
         blender_command = [
             str(blender),
             "--background",
@@ -165,11 +324,11 @@ def _generate_one(
             blender_command.append("--no-background")
         if not include_metric_reference:
             blender_command.append("--no-metric-reference")
-        _run(blender_command, "Blender export")
+        _run(blender_command, _t(language, "blender_export"))
         if not output_blend.is_file():
             raise RuntimeError("Blender exited without creating the requested .blend file.")
         if save_ply:
-            _run([sys.executable, str(SCRIPTS / "export_ue_gaussian_ply.py"), str(source_ply), str(output_ue_ply)], "Unreal PLY export")
+            _run([sys.executable, str(SCRIPTS / "export_ue_gaussian_ply.py"), str(source_ply), str(output_ue_ply)], _t(language, "unreal_export"))
     return str(output_blend)
 
 
@@ -182,23 +341,22 @@ def generate_blend(
     include_background: bool,
     include_metric_reference: bool,
     save_ply: bool,
+    language: str,
 ) -> tuple[list[str], str, dict[str, object]]:
     if point_radius <= 0:
-        raise gr.Error("\uc810 \ud45c\uc2dc \ubc18\uc9c0\ub984\uc740 0\ubcf4\ub2e4 \ucee4\uc57c \ud569\ub2c8\ub2e4.")
-    checkpoint_path = DEFAULT_CHECKPOINT
-    if not checkpoint_path.is_file():
-        raise gr.Error(f"UniSHARP \uccb4\ud06c\ud3ec\uc778\ud2b8\ub97c \ucc3e\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4: {checkpoint_path}")
+        raise gr.Error(_t(language, "point_radius_error"))
+    checkpoint_path = _ensure_checkpoint(language)
     paths = [Path(item) for item in ([images] if isinstance(images, str) else (images or []))]
     if not paths:
-        raise gr.Error("\uc774\ubbf8\uc9c0\ub97c \ud558\ub098 \uc774\uc0c1 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.")
+        raise gr.Error(_t(language, "images_required"))
     destination = Path(output_folder).expanduser().resolve()
     destination.mkdir(parents=True, exist_ok=True)
-    blender = _blender_executable()
+    blender = _blender_executable(language)
     final_files: list[str] = []
     ply_files: list[str] = []
     for image in paths:
         if not image.is_file():
-            raise gr.Error(f"\uc785\ub825 \uc774\ubbf8\uc9c0\ub97c \ucc3e\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4: {image}")
+            raise gr.Error(_t(language, "image_missing", path=image))
         scene_name = _safe_name(image) + ("_square_pixels" if force_square_pixels and camera_kind in {"auto", "perspective"} else "")
         final_files.append(
             _generate_one(
@@ -213,20 +371,19 @@ def generate_blend(
                 save_ply,
                 checkpoint_path,
                 blender,
+                language,
             )
         )
         if save_ply:
             output_ply = destination / f"{scene_name}_unreal_gaussian_splat.ply"
             if output_ply.is_file():
                 ply_files.append(str(output_ply))
-    ply_note = " Unreal\uc6a9 Gaussian Splat PLY\ub3c4 \uc800\uc7a5\ud588\uc2b5\ub2c8\ub2e4." if save_ply else " Blender \ud30c\uc77c\ub9cc \uc800\uc7a5\ud588\uc2b5\ub2c8\ub2e4."
+    ply_note = _t(language, "ply_saved") if save_ply else _t(language, "blend_only")
     selected_ply = ply_files[0] if len(ply_files) == 1 else None
-    return final_files, f"\uc644\ub8cc: Blender \ud30c\uc77c {len(final_files)}\uac1c\ub97c \uc0dd\uc131\ud588\uc2b5\ub2c8\ub2e4.{ply_note}\n\n{destination}", gr.update(choices=ply_files, value=selected_ply)
+    return final_files, _t(language, "done", count=len(final_files), ply_note=ply_note, destination=destination), gr.update(choices=ply_files, value=selected_ply)
 
 
-with gr.Blocks(
-    title="UniSHARP -> Blender",
-    css="""
+CUSTOM_CSS = """
         #unisharp-header { display: flex; align-items: center; gap: 0.8rem; margin: 0.2rem 0 1.1rem; }
         #unisharp-header h1 { margin: 0; }
         #unisharp-header a { color: #8b949e; font-size: 0.9rem; text-decoration: none; }
@@ -243,29 +400,37 @@ with gr.Blocks(
             margin: 0;
         }
         #generate-button { margin: 0.8rem 0; }
-    """,
-) as demo:
-    gr.HTML(
-        "<div id='unisharp-header'><h1>\ub2e8\uc77c \uc774\ubbf8\uc9c0 \uac00\uc6b0\uc2dc\uc548 \ubcc0\uacbd</h1>"
-        "<a href='https://github.com/Insta360-Research-Team/UniSHARP' target='_blank' rel='noopener'>GitHub ↗</a></div>"
-    )
+"""
+
+
+with gr.Blocks(title="UniSHARP Blender Workflow") as demo:
+    with gr.Row():
+        header = gr.HTML(_header_html("ko"), scale=8)
+        language = gr.Dropdown(
+            choices=[("한국어", "ko"), ("English", "en")],
+            value="ko",
+            label="언어 / Language",
+            show_label=True,
+            scale=1,
+            min_width=150,
+        )
 
     with gr.Column():
-        gr.Markdown("### \uae30\ubcf8 \uc124\uc815", elem_id="section-basic")
+        basic_heading = gr.Markdown(_t("ko", "basic"), elem_id="section-basic")
         with gr.Row():
-            output_folder = gr.Textbox(label="\ucd9c\ub825 \ud3f4\ub354", value=str(DEFAULT_OUTPUT), scale=3)
+            output_folder = gr.Textbox(label=_t("ko", "output_folder"), value=str(DEFAULT_OUTPUT), scale=3)
             camera_kind = gr.Dropdown(
-                [("\uc790\ub3d9", "auto"), ("\uc6d0\uadfc", "perspective"), ("\uc5b4\uc548", "fisheye"), ("\ud30c\ub178\ub77c\ub9c8", "panorama")],
+                _camera_choices("ko"),
                 value="perspective",
-                label="\uce74\uba54\ub77c \uc885\ub958",
+                label=_t("ko", "camera_kind"),
                 scale=1,
             )
 
     with gr.Row():
         with gr.Column(scale=3):
-            gr.Markdown("### \uc785\ub825 \uc774\ubbf8\uc9c0", elem_id="section-input")
+            input_heading = gr.Markdown(_t("ko", "input"), elem_id="section-input")
             images = gr.File(
-                label="\uc774\ubbf8\uc9c0 \ucd94\uac00 (\uc77c\ubc18 / \uc5b4\uc548 / ERP \ud30c\ub178\ub77c\ub9c8)",
+                label=_t("ko", "images"),
                 file_types=["image"],
                 file_count="multiple",
                 type="filepath",
@@ -274,38 +439,63 @@ with gr.Blocks(
 
         with gr.Column(scale=2):
             with gr.Column():
-                gr.Markdown("### \uc635\uc158", elem_id="section-options")
+                options_heading = gr.Markdown(_t("ko", "options"), elem_id="section-options")
                 force_square_pixels = gr.Checkbox(
-                    label="\uc815\uc0ac\uac01\ud615 \ud53d\uc140 \uac15\uc81c (\uc138\ub85c \uc624\ubc84\ub808\uc774 \ubcf4\uc815)",
+                    label=_t("ko", "force_square"),
                     value=True,
-                    info="\uc6d0\uadfc \uc0ac\uc9c4\uc5d0\uc11c\ub9cc \uc801\uc6a9\ub429\ub2c8\ub2e4. \ucd94\uc815\ub41c fx\ub97c \uc720\uc9c0\ud558\uace0 fy=fx\ub85c \ub9de\ucd94\ub294 \uc635\uc158\uc785\ub2c8\ub2e4.",
+                    info=_t("ko", "force_square_info"),
                 )
                 point_radius = gr.Number(
-                    label="\uac00\uc6b0\uc2dc\uc548 \uc810 \ud45c\uc2dc \ubc18\uc9c0\ub984 (m)",
+                    label=_t("ko", "point_radius"),
                     value=0.006,
                     minimum=0.0001,
                     maximum=1.0,
-                    info="Blender \ubdf0\ud3ec\ud2b8\uc5d0\uc11c \uc810\uc744 \uc5bc\ub9c8\ub098 \ud06c\uac8c \ubcf4\uc77c\uc9c0 \uc815\ud558\ub294 \ud654\uba74\uc6a9 \ud06c\uae30\uc785\ub2c8\ub2e4. \uc2e4\uc81c 3D Gaussian\uc758 scale\uc740 \ubc14\ub00c\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uac12\uc744 \ud0a4\uc6b0\uba74 \ube48\ud2c8\uc774 \uc904\uace0, \ub108\ubb34 \ud06c\uba74 \ub514\ud14c\uc77c\uc774 \ubb49\uac1c\uc9d1\ub2c8\ub2e4.",
+                    info=_t("ko", "point_radius_info"),
                 )
-                include_background = gr.Checkbox(label="\uc6d0\ubcf8 \uc774\ubbf8\uc9c0\ub97c \uce74\uba54\ub77c \ubc30\uacbd\uc73c\ub85c \ud3ec\ud568", value=True)
-                include_metric_reference = gr.Checkbox(label="1m \ub808\ud37c\ub7f0\uc2a4 \ud050\ube0c \ud3ec\ud568", value=True)
-                save_ply = gr.Checkbox(label="Unreal\uc6a9 Gaussian Splat PLY \uc800\uc7a5", value=True)
-    generate = gr.Button("Blender \ud30c\uc77c \uc0dd\uc131", variant="primary", size="lg", elem_id="generate-button")
+                include_background = gr.Checkbox(label=_t("ko", "background"), value=True)
+                include_metric_reference = gr.Checkbox(label=_t("ko", "metric_reference"), value=True)
+                save_ply = gr.Checkbox(label=_t("ko", "save_ply"), value=True)
+    generate = gr.Button(_t("ko", "generate"), variant="primary", size="lg", elem_id="generate-button")
     with gr.Column():
-        gr.Markdown("### \uc0dd\uc131 \uacb0\uacfc", elem_id="section-result")
-        result_files = gr.File(label="\uc0dd\uc131\ub41c Blender \ud30c\uc77c", file_count="multiple")
+        result_heading = gr.Markdown(_t("ko", "result"), elem_id="section-result")
+        result_files = gr.File(label=_t("ko", "result_files"), file_count="multiple")
         status = gr.Markdown()
-    gr.Markdown("## Unreal\uc6a9 Gaussian Splat PLY \ubbf8\ub9ac\ubcf4\uae30")
-    viewer_ply = gr.Dropdown(label="\ubbf8\ub9ac\ubcf4\uae30\ud560 PLY", choices=[], interactive=True)
-    open_viewer = gr.Button("PLY \ubbf8\ub9ac\ubcf4\uae30 \uc5f4\uae30")
-    viewer_html = gr.HTML("<div>PLY\ub97c \uc120\ud0dd\ud55c \ub4a4 \ubbf8\ub9ac\ubcf4\uae30\ub97c \uc5f4\uc5b4 \uc8fc\uc138\uc694.</div>")
+    viewer_heading = gr.Markdown(_t("ko", "viewer_title"))
+    viewer_ply = gr.Dropdown(label=_t("ko", "viewer_ply"), choices=[], interactive=True)
+    open_viewer = gr.Button(_t("ko", "open_viewer"))
+    viewer_html = gr.HTML(f"<div>{_t('ko', 'viewer_empty')}</div>")
     generate.click(
         generate_blend,
-        inputs=[images, output_folder, camera_kind, force_square_pixels, point_radius, include_background, include_metric_reference, save_ply],
+        inputs=[images, output_folder, camera_kind, force_square_pixels, point_radius, include_background, include_metric_reference, save_ply, language],
         outputs=[result_files, status, viewer_ply],
     )
-    open_viewer.click(open_ply_viewer, inputs=viewer_ply, outputs=viewer_html)
+    open_viewer.click(open_ply_viewer, inputs=[viewer_ply, language], outputs=viewer_html)
+    language.change(
+        _language_updates,
+        inputs=language,
+        outputs=[
+            header,
+            basic_heading,
+            output_folder,
+            camera_kind,
+            input_heading,
+            images,
+            options_heading,
+            force_square_pixels,
+            point_radius,
+            include_background,
+            include_metric_reference,
+            save_ply,
+            generate,
+            result_heading,
+            result_files,
+            viewer_heading,
+            viewer_ply,
+            open_viewer,
+            viewer_html,
+        ],
+    )
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="127.0.0.1", server_port=7860, inbrowser=True, footer_links=[])
+    demo.launch(server_name="127.0.0.1", server_port=7860, inbrowser=True, footer_links=[], css=CUSTOM_CSS)
