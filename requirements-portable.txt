@@ -1,0 +1,4 @@
+# Runtime additions for the standalone Windows package.
+-r requirements.txt
+gradio==6.22.0
+viser==1.0.30
