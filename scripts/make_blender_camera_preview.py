@@ -92,20 +92,35 @@ def parent_keep_world_transform(child: bpy.types.Object, parent: bpy.types.Objec
 def export_unreal_camera_fbx(camera: bpy.types.Object, output_path: Path) -> None:
     """Export only the reconstructed source camera using Unreal's FBX axis convention."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    bpy.ops.object.select_all(action="DESELECT")
-    camera.select_set(True)
-    bpy.context.view_layer.objects.active = camera
-    bpy.ops.export_scene.fbx(
-        filepath=str(output_path),
-        use_selection=True,
-        object_types={"CAMERA"},
-        axis_forward="-Z",
-        axis_up="Y",
-        apply_unit_scale=True,
-        apply_scale_options="FBX_SCALE_UNITS",
-        bake_anim=False,
-        add_leaf_bones=False,
-    )
+    # Blender cameras look along local -Z. Unreal's FBX camera importer reads
+    # this source transform with its optical direction reversed. Export an
+    # unparented duplicate with a local 180-degree yaw so it faces the Gaussian
+    # scene in Unreal, without changing the camera saved in the .blend file.
+    export_camera = camera.copy()
+    export_camera.data = camera.data.copy()
+    export_camera.name = "Unreal source camera"
+    bpy.context.collection.objects.link(export_camera)
+    export_camera.parent = None
+    export_camera.matrix_world = camera.matrix_world @ Matrix.Rotation(np.pi, 4, "Y")
+    try:
+        bpy.ops.object.select_all(action="DESELECT")
+        export_camera.select_set(True)
+        bpy.context.view_layer.objects.active = export_camera
+        bpy.ops.export_scene.fbx(
+            filepath=str(output_path),
+            use_selection=True,
+            object_types={"CAMERA"},
+            axis_forward="-Z",
+            axis_up="Y",
+            apply_unit_scale=True,
+            apply_scale_options="FBX_SCALE_UNITS",
+            bake_anim=False,
+            add_leaf_bones=False,
+        )
+    finally:
+        export_camera_data = export_camera.data
+        bpy.data.objects.remove(export_camera, do_unlink=True)
+        bpy.data.cameras.remove(export_camera_data)
 
 
 def main() -> None:
