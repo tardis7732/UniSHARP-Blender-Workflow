@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import os
 import secrets
-import shutil
 import socket
 import subprocess
 import sys
@@ -65,7 +64,6 @@ TEXT = {
         "checkpoint_failed": "UniSHARP 체크포인트를 다운로드하지 못했습니다: {detail}",
         "images_required": "이미지를 하나 이상 선택해 주세요.",
         "image_missing": "입력 이미지를 찾지 못했습니다: {path}",
-        "blender_missing": "Blender 3.6 이상을 찾지 못했습니다. 설치하거나 BLENDER_EXE를 설정한 뒤 GUI를 다시 여세요.",
         "inference": "UniSHARP 추론",
         "color_conversion": "색상 변환",
         "blender_export": "Blender 내보내기",
@@ -109,7 +107,6 @@ TEXT = {
         "checkpoint_failed": "Could not download the UniSHARP checkpoint: {detail}",
         "images_required": "Select at least one image.",
         "image_missing": "Input image was not found: {path}",
-        "blender_missing": "Blender 3.6 or newer was not found. Install it or set BLENDER_EXE, then reopen the GUI.",
         "inference": "UniSHARP inference",
         "color_conversion": "Color conversion",
         "blender_export": "Blender export",
@@ -145,20 +142,9 @@ def _header_html(language: str) -> str:
     )
 
 
-def _blender_executable(language: str) -> Path:
-    configured = os.environ.get("BLENDER_EXE")
-    candidates = [Path(configured)] if configured else []
-    for program_files in (os.environ.get("ProgramFiles"), os.environ.get("ProgramW6432")):
-        if program_files:
-            blender_root = Path(program_files) / "Blender Foundation"
-            candidates.extend(sorted(blender_root.glob("Blender */blender.exe"), reverse=True))
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate
-    discovered = shutil.which("blender")
-    if discovered:
-        return Path(discovered)
-    raise RuntimeError(_t(language, "blender_missing"))
+def _blender_executable() -> str:
+    """Use an explicitly configured executable or the `blender` command on PATH."""
+    return os.environ.get("BLENDER_EXE", "blender")
 
 
 def _ensure_checkpoint(language: str) -> Path:
@@ -275,7 +261,7 @@ def _generate_one(
     include_metric_reference: bool,
     save_ply: bool,
     checkpoint_path: Path,
-    blender: Path,
+    blender: str,
     language: str,
 ) -> str:
     image = image.resolve()
@@ -307,7 +293,7 @@ def _generate_one(
         colored_ply = temp_root / "colored_points.ply"
         _run([sys.executable, str(SCRIPTS / "export_colored_ply.py"), str(source_ply), str(colored_ply)], _t(language, "color_conversion"))
         blender_command = [
-            str(blender),
+            blender,
             "--background",
             "--factory-startup",
             "--python",
@@ -353,7 +339,7 @@ def generate_blend(
         raise gr.Error(_t(language, "images_required"))
     destination = Path(output_folder).expanduser().resolve()
     destination.mkdir(parents=True, exist_ok=True)
-    blender = _blender_executable(language)
+    blender = _blender_executable()
     final_files: list[str] = []
     ply_files: list[str] = []
     for image in paths:

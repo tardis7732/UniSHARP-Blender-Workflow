@@ -22,7 +22,7 @@
 
 ## 로컬 워크플로우 추가분
 
-이 저장소의 `scripts/blender_gui.py`, Blender/PLY export 스크립트, `portable/` 실행 스크립트와 `docs/` 문서는 UniSHARP 기반 로컬 워크플로우를 위한 추가분입니다. 이 추가분을 포함해 재배포할 때에도 UniSHARP와 UniK3D에 적용되는 모든 저작자 표시, 비상업 및 동일조건변경허락 조건을 준수해야 합니다.
+이 저장소의 `scripts/blender_gui.py`, Blender/PLY export 스크립트와 `docs/` 문서는 UniSHARP 기반 로컬 워크플로우를 위한 추가분입니다. 이 추가분을 포함해 재배포할 때에도 UniSHARP와 UniK3D에 적용되는 모든 저작자 표시, 비상업 및 동일조건변경허락 조건을 준수해야 합니다.
 
 ## 모델 및 생성물
 
