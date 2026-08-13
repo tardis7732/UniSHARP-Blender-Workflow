@@ -22,6 +22,7 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("source_image", type=Path)
     parser.add_argument("output_blend", type=Path)
     parser.add_argument("--point-radius", type=float, default=0.006, help="Viewport point radius in meters.")
+    parser.add_argument("--output-camera-fbx", type=Path, help="Optional Unreal-compatible FBX containing only the source camera.")
     parser.add_argument("--no-background", action="store_true", help="Do not embed the source image in the camera background.")
     parser.add_argument("--no-metric-reference", action="store_true", help="Do not add the 1 m cube and origin reference.")
     parser.add_argument("--orientation", choices=("negative_x_xminus90", "source"), default="negative_x_xminus90")
@@ -86,6 +87,25 @@ def parent_keep_world_transform(child: bpy.types.Object, parent: bpy.types.Objec
     child.parent = parent
     child.matrix_parent_inverse = parent.matrix_world.inverted()
     child.matrix_world = world_matrix
+
+
+def export_unreal_camera_fbx(camera: bpy.types.Object, output_path: Path) -> None:
+    """Export only the reconstructed source camera using Unreal's FBX axis convention."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.object.select_all(action="DESELECT")
+    camera.select_set(True)
+    bpy.context.view_layer.objects.active = camera
+    bpy.ops.export_scene.fbx(
+        filepath=str(output_path),
+        use_selection=True,
+        object_types={"CAMERA"},
+        axis_forward="-Z",
+        axis_up="Y",
+        apply_unit_scale=True,
+        apply_scale_options="FBX_SCALE_UNITS",
+        bake_anim=False,
+        add_leaf_bones=False,
+    )
 
 
 def main() -> None:
@@ -179,6 +199,9 @@ def main() -> None:
     bpy.context.view_layer.objects.active = scene_axis
     output_path.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(output_path))
+    if args.output_camera_fbx is not None:
+        export_unreal_camera_fbx(camera, args.output_camera_fbx)
+        print(f"Saved Unreal camera FBX {args.output_camera_fbx}")
     print(f"Saved {output_path}; image={width}x{height}; fx={intrinsic[0, 0]:.2f}")
 
 

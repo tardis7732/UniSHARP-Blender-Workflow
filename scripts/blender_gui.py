@@ -43,14 +43,13 @@ TEXT = {
         "options": "### 옵션",
         "force_square": "정사각형 픽셀 강제 (세로 오버레이 보정)",
         "force_square_info": "원근 사진에서만 적용됩니다. 추정된 fx를 유지하고 fy=fx로 맞춥니다.",
-        "point_radius": "가우시안 점 표시 반지름 (m)",
-        "point_radius_info": "Blender 뷰포트에서 점을 얼마나 크게 보일지 정하는 화면용 크기입니다. 실제 3D Gaussian의 scale은 바뀌지 않습니다. 값을 키우면 빈틈이 줄고, 너무 크면 디테일이 뭉개집니다.",
         "background": "원본 이미지를 카메라 배경으로 포함",
         "metric_reference": "1m 레퍼런스 큐브 포함",
         "save_ply": "Unreal용 Gaussian Splat PLY 저장",
+        "save_camera_fbx": "Unreal용 카메라 FBX 저장",
         "generate": "Blender 파일 생성",
         "result": "### 생성 결과",
-        "result_files": "생성된 Blender 파일",
+        "result_files": "생성된 파일",
         "viewer_title": "## Unreal용 Gaussian Splat PLY 미리보기",
         "viewer_ply": "미리보기할 PLY",
         "open_viewer": "PLY 미리보기 열기",
@@ -59,7 +58,6 @@ TEXT = {
         "perspective": "원근",
         "fisheye": "어안",
         "panorama": "파노라마",
-        "point_radius_error": "점 표시 반지름은 0보다 커야 합니다.",
         "checkpoint_downloading": "UniSHARP 모델 체크포인트가 없어 다운로드합니다. 최초 1회 약 4.7GB를 받으므로 인터넷 연결과 여유 공간이 필요합니다.",
         "checkpoint_failed": "UniSHARP 체크포인트를 다운로드하지 못했습니다: {detail}",
         "images_required": "이미지를 하나 이상 선택해 주세요.",
@@ -68,9 +66,7 @@ TEXT = {
         "color_conversion": "색상 변환",
         "blender_export": "Blender 내보내기",
         "unreal_export": "Unreal PLY 내보내기",
-        "ply_saved": " Unreal용 Gaussian Splat PLY도 저장했습니다.",
-        "blend_only": " Blender 파일만 저장했습니다.",
-        "done": "완료: Blender 파일 {count}개를 생성했습니다.{ply_note}\n\n{destination}",
+        "done": "완료: 파일 {count}개를 생성했습니다.\n\n{destination}",
         "viewer_select": "미리보기할 Unreal용 Gaussian Splat PLY를 선택해 주세요.",
         "viewer_missing": "PLY를 찾지 못했습니다: {path}",
         "viewer_failed": "PLY 뷰어를 시작하지 못했습니다.",
@@ -86,14 +82,13 @@ TEXT = {
         "options": "### Options",
         "force_square": "Force square pixels (vertical overlay correction)",
         "force_square_info": "Perspective images only. Keeps the estimated fx and sets fy=fx.",
-        "point_radius": "Gaussian Point Display Radius (m)",
-        "point_radius_info": "Viewport-only point size in Blender. It does not change the actual 3D Gaussian scale. Larger values fill gaps but can blur fine detail.",
         "background": "Include source image as camera background",
         "metric_reference": "Include 1 m reference cube",
         "save_ply": "Save Unreal Gaussian Splat PLY",
+        "save_camera_fbx": "Save Unreal Camera FBX",
         "generate": "Create Blender File",
         "result": "### Result",
-        "result_files": "Generated Blender Files",
+        "result_files": "Generated Files",
         "viewer_title": "## Unreal Gaussian Splat PLY Preview",
         "viewer_ply": "PLY to Preview",
         "open_viewer": "Open PLY Preview",
@@ -102,7 +97,6 @@ TEXT = {
         "perspective": "Perspective",
         "fisheye": "Fisheye",
         "panorama": "Panorama",
-        "point_radius_error": "Point display radius must be greater than zero.",
         "checkpoint_downloading": "The UniSHARP model checkpoint is missing and will be downloaded. The first download is about 4.7 GB, so an internet connection and free disk space are required.",
         "checkpoint_failed": "Could not download the UniSHARP checkpoint: {detail}",
         "images_required": "Select at least one image.",
@@ -111,9 +105,7 @@ TEXT = {
         "color_conversion": "Color conversion",
         "blender_export": "Blender export",
         "unreal_export": "Unreal PLY export",
-        "ply_saved": " Unreal Gaussian Splat PLY was also saved.",
-        "blend_only": " Only the Blender file was saved.",
-        "done": "Done: created {count} Blender file(s).{ply_note}\n\n{destination}",
+        "done": "Done: created {count} file(s).\n\n{destination}",
         "viewer_select": "Select an Unreal Gaussian Splat PLY to preview.",
         "viewer_missing": "PLY was not found: {path}",
         "viewer_failed": "Could not start the PLY viewer.",
@@ -178,10 +170,10 @@ def _language_updates(language: str) -> tuple[object, ...]:
         gr.update(label=_t(language, "images")),
         _t(language, "options"),
         gr.update(label=_t(language, "force_square"), info=_t(language, "force_square_info")),
-        gr.update(label=_t(language, "point_radius"), info=_t(language, "point_radius_info")),
         gr.update(label=_t(language, "background")),
         gr.update(label=_t(language, "metric_reference")),
         gr.update(label=_t(language, "save_ply")),
+        gr.update(label=_t(language, "save_camera_fbx")),
         gr.update(value=_t(language, "generate")),
         _t(language, "result"),
         gr.update(label=_t(language, "result_files")),
@@ -193,7 +185,7 @@ def _language_updates(language: str) -> tuple[object, ...]:
 
 
 def _run(command: list[str], label: str) -> None:
-    completed = subprocess.run(command, cwd=REPO_ROOT, text=True, capture_output=True)
+    completed = subprocess.run(command, cwd=REPO_ROOT, text=True, capture_output=True, errors="replace")
     if completed.returncode:
         detail = (completed.stderr or completed.stdout or "No diagnostic output").strip()
         raise RuntimeError(f"{label} failed.\n\n{detail[-4000:]}")
@@ -256,17 +248,18 @@ def _generate_one(
     destination: Path,
     camera_kind: str,
     force_square_pixels: bool,
-    point_radius: float,
     include_background: bool,
     include_metric_reference: bool,
     save_ply: bool,
+    save_camera_fbx: bool,
     checkpoint_path: Path,
     blender: str,
     language: str,
-) -> str:
+) -> list[str]:
     image = image.resolve()
     output_blend = destination / f"{scene_name}_unisharp.blend"
     output_ue_ply = destination / f"{scene_name}_unreal_gaussian_splat.ply"
+    output_camera_fbx = destination / f"{scene_name}_unreal_camera.fbx"
     with tempfile.TemporaryDirectory(prefix="unisharp_blender_") as temp:
         temp_root = Path(temp)
         inference_command = [
@@ -304,7 +297,7 @@ def _generate_one(
             str(image),
             str(output_blend),
             "--point-radius",
-            str(point_radius),
+            "0.006",
             "--orientation",
             "negative_x_xminus90",
         ]
@@ -312,12 +305,20 @@ def _generate_one(
             blender_command.append("--no-background")
         if not include_metric_reference:
             blender_command.append("--no-metric-reference")
+        if save_camera_fbx:
+            blender_command.extend(["--output-camera-fbx", str(output_camera_fbx)])
         _run(blender_command, _t(language, "blender_export"))
         if not output_blend.is_file():
             raise RuntimeError("Blender exited without creating the requested .blend file.")
+        if save_camera_fbx and not output_camera_fbx.is_file():
+            raise RuntimeError("Blender exited without creating the requested Unreal camera FBX.")
         if save_ply:
             _run([sys.executable, str(SCRIPTS / "export_ue_gaussian_ply.py"), str(source_ply), str(output_ue_ply)], _t(language, "unreal_export"))
-    return str(output_blend)
+    return [
+        str(path)
+        for path in (output_blend, output_ue_ply if save_ply else None, output_camera_fbx if save_camera_fbx else None)
+        if path is not None
+    ]
 
 
 def generate_blend(
@@ -325,14 +326,12 @@ def generate_blend(
     output_folder: str,
     camera_kind: str,
     force_square_pixels: bool,
-    point_radius: float,
     include_background: bool,
     include_metric_reference: bool,
     save_ply: bool,
+    save_camera_fbx: bool,
     language: str,
 ) -> tuple[list[str], str, dict[str, object]]:
-    if point_radius <= 0:
-        raise gr.Error(_t(language, "point_radius_error"))
     checkpoint_path = _ensure_checkpoint(language)
     paths = [Path(item) for item in ([images] if isinstance(images, str) else (images or []))]
     if not paths:
@@ -346,17 +345,17 @@ def generate_blend(
         if not image.is_file():
             raise gr.Error(_t(language, "image_missing", path=image))
         scene_name = _safe_name(image) + ("_square_pixels" if force_square_pixels and camera_kind in {"auto", "perspective"} else "")
-        final_files.append(
+        final_files.extend(
             _generate_one(
                 image,
                 scene_name,
                 destination,
                 camera_kind,
                 force_square_pixels,
-                point_radius,
                 include_background,
                 include_metric_reference,
                 save_ply,
+                save_camera_fbx,
                 checkpoint_path,
                 blender,
                 language,
@@ -366,9 +365,8 @@ def generate_blend(
             output_ply = destination / f"{scene_name}_unreal_gaussian_splat.ply"
             if output_ply.is_file():
                 ply_files.append(str(output_ply))
-    ply_note = _t(language, "ply_saved") if save_ply else _t(language, "blend_only")
     selected_ply = ply_files[0] if len(ply_files) == 1 else None
-    return final_files, _t(language, "done", count=len(final_files), ply_note=ply_note, destination=destination), gr.update(choices=ply_files, value=selected_ply)
+    return final_files, _t(language, "done", count=len(final_files), destination=destination), gr.update(choices=ply_files, value=selected_ply)
 
 
 CUSTOM_CSS = """
@@ -433,16 +431,10 @@ with gr.Blocks(title="UniSHARP Blender Workflow") as demo:
                     value=True,
                     info=_t("ko", "force_square_info"),
                 )
-                point_radius = gr.Number(
-                    label=_t("ko", "point_radius"),
-                    value=0.006,
-                    minimum=0.0001,
-                    maximum=1.0,
-                    info=_t("ko", "point_radius_info"),
-                )
                 include_background = gr.Checkbox(label=_t("ko", "background"), value=True)
                 include_metric_reference = gr.Checkbox(label=_t("ko", "metric_reference"), value=True)
                 save_ply = gr.Checkbox(label=_t("ko", "save_ply"), value=True)
+                save_camera_fbx = gr.Checkbox(label=_t("ko", "save_camera_fbx"), value=True)
     generate = gr.Button(_t("ko", "generate"), variant="primary", size="lg", elem_id="generate-button")
     with gr.Column():
         result_heading = gr.Markdown(_t("ko", "result"), elem_id="section-result")
@@ -454,7 +446,7 @@ with gr.Blocks(title="UniSHARP Blender Workflow") as demo:
     viewer_html = gr.HTML(f"<div>{_t('ko', 'viewer_empty')}</div>")
     generate.click(
         generate_blend,
-        inputs=[images, output_folder, camera_kind, force_square_pixels, point_radius, include_background, include_metric_reference, save_ply, language],
+        inputs=[images, output_folder, camera_kind, force_square_pixels, include_background, include_metric_reference, save_ply, save_camera_fbx, language],
         outputs=[result_files, status, viewer_ply],
     )
     open_viewer.click(open_ply_viewer, inputs=[viewer_ply, language], outputs=viewer_html)
@@ -470,10 +462,10 @@ with gr.Blocks(title="UniSHARP Blender Workflow") as demo:
             images,
             options_heading,
             force_square_pixels,
-            point_radius,
             include_background,
             include_metric_reference,
             save_ply,
+            save_camera_fbx,
             generate,
             result_heading,
             result_files,

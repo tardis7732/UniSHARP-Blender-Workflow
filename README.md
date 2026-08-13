@@ -72,6 +72,7 @@ bash scripts/run_browser_ui.sh --share
 
 - `<이름>_unisharp.blend` — Gaussian 포인트와 카메라가 포함된 Blender 장면
 - `<이름>_unreal_gaussian_splat.ply` — Unreal Gaussian Splat 플러그인용 PLY
+- `<이름>_unreal_camera.fbx` — Unreal Engine으로 가져올 수 있는 소스 카메라 FBX (UI 옵션 사용 시)
 
 ## 문서
 
