@@ -4,6 +4,14 @@
 
 > [Insta360 Research Team의 UniSHARP](https://github.com/Insta360-Research-Team/UniSHARP)를 기반으로 한 비공식 워크플로우입니다. 연구 코드·논문·모델의 원본 정보는 [UniSHARP 원본 저장소](https://github.com/Insta360-Research-Team/UniSHARP)를 참고하세요.
 
+## 일반 사용자 실행 (Windows)
+
+1. 64-bit Python 3.11과 Blender 5.2를 설치합니다.
+2. 저장소 최상단의 **`Run_UniSHARP_UI.bat`** 파일을 더블클릭합니다.
+3. 브라우저가 열리지 않으면 `http://127.0.0.1:7860`으로 접속합니다.
+
+첫 실행에서는 가상환경 생성과 패키지 설치가 자동으로 진행됩니다. 모델 체크포인트도 첫 변환 시 약 4.7GB가 자동 다운로드됩니다. 설치 및 사용 중에는 배치 파일이 연 검은 창을 닫지 마세요.
+
 ## Windows 설치 및 가상환경 설정
 
 일반 사진을 `Perspective` 모드로 변환하는 기준입니다. NVIDIA GPU와 Blender가 설치되어 있어야 하며, Python은 **3.11 (64-bit)** 사용을 권장합니다.
