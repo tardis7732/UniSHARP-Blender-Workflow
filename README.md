@@ -4,13 +4,52 @@
 
 > [Insta360 Research Team의 UniSHARP](https://github.com/Insta360-Research-Team/UniSHARP)를 기반으로 한 비공식 워크플로우입니다. 연구 코드·논문·모델의 원본 정보는 [UniSHARP 원본 저장소](https://github.com/Insta360-Research-Team/UniSHARP)를 참고하세요.
 
+## Windows 설치 및 가상환경 설정
+
+일반 사진을 `Perspective` 모드로 변환하는 기준입니다. NVIDIA GPU와 Blender가 설치되어 있어야 하며, Python은 **3.11 (64-bit)** 사용을 권장합니다.
+
+PowerShell에서 저장소 폴더로 이동한 뒤 가상환경을 만들고 활성화합니다.
+
+```powershell
+cd "C:\경로\UniSHARP-Blender-Workflow"
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+PowerShell 실행 정책 때문에 활성화가 막히면, 현재 창에만 적용되도록 아래 명령을 한 번 실행한 뒤 다시 활성화합니다.
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+패키지를 설치합니다. RTX 50 시리즈처럼 최신 GPU에서는 NVIDIA CUDA에 맞는 PyTorch 설치 명령을 [PyTorch 설치 페이지](https://pytorch.org/get-started/locally/)에서 먼저 확인한 뒤, 나머지 패키지를 설치하세요.
+
+```powershell
+python -m pip install --upgrade pip
+pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
+pip install -r requirements.txt
+```
+
+Blender가 PATH에 없으면 설치 파일 경로를 환경 변수로 지정합니다. 예를 들어 Blender 5.2의 기본 설치 경로는 다음과 같습니다.
+
+```powershell
+$env:BLENDER_EXE = "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
+```
+
+가상환경을 종료할 때는 `deactivate`를 실행합니다. 다음에 다시 사용할 때는 저장소 폴더에서 `.\.venv\Scripts\Activate.ps1`만 실행하면 됩니다.
+
 ## 실행
 
 프로젝트 Python 환경에서 아래 한 줄로 브라우저 UI를 엽니다.
 
-```bash
+```powershell
 python scripts/blender_gui.py
 ```
+
+첫 변환 때는 UniSHARP 체크포인트(약 4.7GB)를 Hugging Face에서 자동으로 받습니다. UI에서 이미지 한 장을 추가하고, 일반 사진은 카메라 종류를 `Perspective`로 선택하세요. 결과는 기본적으로 `Blender_Output` 폴더에 저장됩니다.
+
+어안(`Fisheye`) 모드는 별도 3DGEER rasterizer 빌드가 필요하므로, 해당 구성요소를 설치하지 않았다면 사용하지 마세요.
 
 서버 브라우저 접속용 PIN UI는 다음과 같이 실행합니다.
 
