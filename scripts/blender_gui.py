@@ -52,6 +52,7 @@ TEXT = {
         "result_files": "생성된 파일",
         "viewer_title": "## Unreal용 Gaussian Splat PLY 미리보기",
         "viewer_ply": "미리보기할 PLY",
+        "viewer_upload": "PLY 파일 끌어놓기 또는 업로드",
         "open_viewer": "PLY 미리보기 열기",
         "viewer_empty": "PLY를 선택한 뒤 미리보기를 열어 주세요.",
         "auto": "자동",
@@ -67,7 +68,7 @@ TEXT = {
         "blender_export": "Blender 내보내기",
         "unreal_export": "Unreal PLY 내보내기",
         "done": "완료: 파일 {count}개를 생성했습니다.\n\n{destination}",
-        "viewer_select": "미리보기할 Unreal용 Gaussian Splat PLY를 선택해 주세요.",
+        "viewer_select": "미리보기할 Unreal용 Gaussian Splat PLY를 선택하거나 업로드해 주세요.",
         "viewer_missing": "PLY를 찾지 못했습니다: {path}",
         "viewer_failed": "PLY 뷰어를 시작하지 못했습니다.",
     },
@@ -91,6 +92,7 @@ TEXT = {
         "result_files": "Generated Files",
         "viewer_title": "## Unreal Gaussian Splat PLY Preview",
         "viewer_ply": "PLY to Preview",
+        "viewer_upload": "Drop or Upload a PLY File",
         "open_viewer": "Open PLY Preview",
         "viewer_empty": "Select a PLY file, then open the preview.",
         "auto": "Auto",
@@ -106,7 +108,7 @@ TEXT = {
         "blender_export": "Blender export",
         "unreal_export": "Unreal PLY export",
         "done": "Done: created {count} file(s).\n\n{destination}",
-        "viewer_select": "Select an Unreal Gaussian Splat PLY to preview.",
+        "viewer_select": "Select or upload an Unreal Gaussian Splat PLY to preview.",
         "viewer_missing": "PLY was not found: {path}",
         "viewer_failed": "Could not start the PLY viewer.",
     },
@@ -179,6 +181,7 @@ def _language_updates(language: str) -> tuple[object, ...]:
         gr.update(label=_t(language, "result_files")),
         _t(language, "viewer_title"),
         gr.update(label=_t(language, "viewer_ply")),
+        gr.update(label=_t(language, "viewer_upload")),
         gr.update(value=_t(language, "open_viewer")),
         f"<div>{_t(language, 'viewer_empty')}</div>",
     )
@@ -212,12 +215,13 @@ def _wait_for_local_port(port: int, timeout_seconds: float = 8.0) -> bool:
     return False
 
 
-def open_ply_viewer(selected_ply: str | None, language: str) -> str:
+def open_ply_viewer(selected_ply: str | None, uploaded_ply: str | None, language: str) -> str:
     """Start a local Viser WebGL viewer and return an iframe for Gradio."""
     global _VIEWER_PROCESS
-    if not selected_ply:
+    ply_source = uploaded_ply or selected_ply
+    if not ply_source:
         raise gr.Error(_t(language, "viewer_select"))
-    ply_path = Path(selected_ply).resolve()
+    ply_path = Path(ply_source).resolve()
     if not ply_path.is_file():
         raise gr.Error(_t(language, "viewer_missing", path=ply_path))
     if _VIEWER_PROCESS is not None and _VIEWER_PROCESS.poll() is None:
@@ -442,6 +446,7 @@ with gr.Blocks(title="UniSHARP Blender Workflow") as demo:
         status = gr.Markdown()
     viewer_heading = gr.Markdown(_t("ko", "viewer_title"))
     viewer_ply = gr.Dropdown(label=_t("ko", "viewer_ply"), choices=[], interactive=True)
+    viewer_upload = gr.File(label=_t("ko", "viewer_upload"), file_types=[".ply"], type="filepath")
     open_viewer = gr.Button(_t("ko", "open_viewer"))
     viewer_html = gr.HTML(f"<div>{_t('ko', 'viewer_empty')}</div>")
     generate.click(
@@ -449,7 +454,7 @@ with gr.Blocks(title="UniSHARP Blender Workflow") as demo:
         inputs=[images, output_folder, camera_kind, force_square_pixels, include_background, include_metric_reference, save_ply, save_camera_fbx, language],
         outputs=[result_files, status, viewer_ply],
     )
-    open_viewer.click(open_ply_viewer, inputs=[viewer_ply, language], outputs=viewer_html)
+    open_viewer.click(open_ply_viewer, inputs=[viewer_ply, viewer_upload, language], outputs=viewer_html)
     language.change(
         _language_updates,
         inputs=language,
@@ -471,6 +476,7 @@ with gr.Blocks(title="UniSHARP Blender Workflow") as demo:
             result_files,
             viewer_heading,
             viewer_ply,
+            viewer_upload,
             open_viewer,
             viewer_html,
         ],
