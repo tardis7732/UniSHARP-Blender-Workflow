@@ -74,6 +74,8 @@ bash scripts/run_browser_ui.sh --share
 - `<이름>_unreal_gaussian_splat.ply` — Unreal Gaussian Splat 플러그인용 PLY
 - `<이름>_unreal_camera.fbx` — Unreal Engine으로 가져올 수 있는 소스 카메라 FBX (UI 옵션 사용 시)
 
+카메라 FBX는 원본 이미지의 가로·세로 화각과 주점을 함께 맞춰 내보냅니다. Unreal에서 임포트한 카메라는 Filmback을 임의의 Full Frame 프리셋으로 바꾸지 말고, `Custom` 센서 값을 유지하세요.
+
 ## 문서
 
 - [GPU 서버 브라우저/PIN 접속](docs/GPU_SERVER_BROWSER_ACCESS.md)

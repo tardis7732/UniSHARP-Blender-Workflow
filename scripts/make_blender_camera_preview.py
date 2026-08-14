@@ -178,6 +178,11 @@ def main() -> None:
     cx, cy = float(intrinsic[0, 2]), float(intrinsic[1, 2])
     camera_data.sensor_fit = "HORIZONTAL"
     camera_data.sensor_width = 36.0
+    # Preserve the source camera's vertical FOV in FBX. Unreal otherwise
+    # imports the camera as a 36x24 mm (3:2) full-frame camera, which shows
+    # extra image above and below a 16:9 source. With the horizontal focal
+    # length fixed below, this sensor height yields the fitted source fy.
+    camera_data.sensor_height = camera_data.sensor_width * (height / width) * (fx / max(fy, 1e-6))
     camera_data.lens = fx * camera_data.sensor_width / width
     c2w_cv = np.linalg.inv(w2c_cv)
     cv_from_blender_camera = np.diag([1.0, -1.0, -1.0, 1.0])
@@ -217,7 +222,10 @@ def main() -> None:
     if args.output_camera_fbx is not None:
         export_unreal_camera_fbx(camera, args.output_camera_fbx)
         print(f"Saved Unreal camera FBX {args.output_camera_fbx}")
-    print(f"Saved {output_path}; image={width}x{height}; fx={intrinsic[0, 0]:.2f}")
+    print(
+        f"Saved {output_path}; image={width}x{height}; "
+        f"fx={fx:.2f}; filmback={camera_data.sensor_width:.3f}x{camera_data.sensor_height:.3f}mm"
+    )
 
 
 if __name__ == "__main__":
